@@ -17,16 +17,25 @@ Backend a microservizi in Spring Boot per gestire una flotta auto: veicoli, manu
 
 Java 21 · Spring Boot · Spring Data JPA · Spring Data MongoDB · Spring Cloud Gateway · OpenFeign · Flyway · MapStruct · springdoc-openapi · JUnit 5 · Mockito · Testcontainers · Docker Compose
 
-## Avvio
+## Requisiti
+
+- JDK 21 o superiore (Maven non serve: c'è il wrapper `./mvnw`)
+- Docker con Docker Compose
+
+## Sviluppo locale
+
+Avvia PostgreSQL (con `vehicles_db` e `maintenance_db`) e MongoDB:
 
 ```bash
-docker compose up --build
+docker compose up -d
 ```
 
-Swagger UI: http://localhost:8080/swagger-ui.html
+Le credenziali predefinite sono in [`.env.example`](.env.example); per cambiarle copia il file in `.env`.
 
-## Test
+## Build e test
 
 ```bash
-mvn verify
+./mvnw verify
 ```
+
+I report di copertura JaCoCo vengono generati in `<modulo>/target/site/jacoco/index.html`.
