@@ -1,41 +1,41 @@
 # FleetCare
 
-Backend a microservizi in Spring Boot per gestire una flotta auto: veicoli, manutenzioni, prenotazioni in officina e notifiche. È il backend che avrebbe dovuto avere la mia app Android MyCar Manager.
+Spring Boot microservice backend for managing a vehicle fleet: vehicles, maintenance, workshop bookings and notifications. It is the backend my Android app MyCar Manager should have had.
 
-> 🚧 Lavori in corso.
+> 🚧 Work in progress.
 
-## Architettura
+## Architecture
 
-| Servizio | Porta | Responsabilità | Database |
+| Service | Port | Responsibility | Database |
 |---|---|---|---|
-| `gateway` | 8080 | Unico punto d'ingresso (Spring Cloud Gateway) | – |
-| `vehicle-service` | 8081 | Veicoli, proprietari, chilometri, revisioni | PostgreSQL |
-| `maintenance-service` | 8082 | Interventi, prenotazioni, report sui costi | PostgreSQL |
-| `notification-service` | 8083 | Eventi e notifiche (es. revisione in scadenza) | MongoDB |
+| `gateway` | 8080 | Single entry point (Spring Cloud Gateway) | – |
+| `vehicle-service` | 8081 | Vehicles, owners, mileage, inspections | PostgreSQL |
+| `maintenance-service` | 8082 | Interventions, bookings, cost reports | PostgreSQL |
+| `notification-service` | 8083 | Events and notifications (e.g. inspection due) | MongoDB |
 
 ## Stack
 
 Java 21 · Spring Boot · Spring Data JPA · Spring Data MongoDB · Spring Cloud Gateway · OpenFeign · Flyway · MapStruct · springdoc-openapi · JUnit 5 · Mockito · Testcontainers · Docker Compose
 
-## Requisiti
+## Requirements
 
-- JDK 21 o superiore (Maven non serve: c'è il wrapper `./mvnw`)
-- Docker con Docker Compose
+- JDK 21 or newer (no Maven install needed: use the `./mvnw` wrapper)
+- Docker with Docker Compose
 
-## Sviluppo locale
+## Local development
 
-Avvia PostgreSQL (con `vehicles_db` e `maintenance_db`) e MongoDB:
+Start PostgreSQL (with `vehicles_db` and `maintenance_db`) and MongoDB:
 
 ```bash
 docker compose up -d
 ```
 
-Le credenziali predefinite sono in [`.env.example`](.env.example); per cambiarle copia il file in `.env`.
+Default credentials are in [`.env.example`](.env.example); to change them, copy the file to `.env`.
 
-## Build e test
+## Build and test
 
 ```bash
 ./mvnw verify
 ```
 
-I report di copertura JaCoCo vengono generati in `<modulo>/target/site/jacoco/index.html`.
+JaCoCo coverage reports are generated in `<module>/target/site/jacoco/index.html`.
