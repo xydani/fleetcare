@@ -38,6 +38,7 @@
         <module>vehicle-service</module>
         <module>maintenance-service</module>
         <module>notification-service</module>
+        <module>gateway</module>
     </modules>
 
     <dependencyManagement>
