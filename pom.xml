@@ -36,6 +36,7 @@
 
     <modules>
         <module>vehicle-service</module>
+        <module>maintenance-service</module>
     </modules>
 
     <dependencyManagement>
