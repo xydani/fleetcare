@@ -27,6 +27,10 @@ management:
         include: health,info
 
 fleetcare:
+  workshop:
+    bays: 3
+    opens-at: "08:00"
+    closes-at: "18:00"
   pricing:
     hourly-rate: 48.00
     fleet-discount-percent: 15
