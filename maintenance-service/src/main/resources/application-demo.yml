@@ -1,0 +1,4 @@
+# Loads demo bookings and interventions on top of the schema.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/demo
