@@ -1,6 +1,21 @@
 spring:
   application:
     name: maintenance-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/maintenance_db
+    username: ${DB_USER:fleetcare}
+    password: ${DB_PASSWORD:fleetcare}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 2000
+            read-timeout: 3000
 
 server:
   port: 8082
@@ -10,3 +25,15 @@ management:
     web:
       exposure:
         include: health,info
+
+fleetcare:
+  workshop:
+    bays: 3
+    opens-at: "08:00"
+    closes-at: "18:00"
+  pricing:
+    hourly-rate: 48.00
+    fleet-discount-percent: 15
+  clients:
+    vehicle-service-url: ${VEHICLE_SERVICE_URL:http://localhost:8081}
+    notification-service-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}

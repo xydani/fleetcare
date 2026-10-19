@@ -26,6 +26,13 @@ class DemoDataTest {
     }
 
     @Test
+    void shouldAssignIdsInListedOrder_soOtherServicesCanReferToThem() {
+        assertThat(jdbc.queryForObject("SELECT plate FROM vehicle WHERE id = 1", String.class)).isEqualTo("FG482KL");
+        assertThat(jdbc.queryForObject("SELECT plate FROM vehicle WHERE id = 30", String.class)).isEqualTo("GP036XE");
+        assertThat(count("SELECT count(*) FROM vehicle WHERE owner_id IS NULL")).isZero();
+    }
+
+    @Test
     void shouldHaveNonDecreasingMileage_forEveryVehicle() {
         var decreasing = count("""
                 SELECT count(*) FROM (

@@ -45,6 +45,18 @@ Swagger UI: http://localhost:8081/swagger-ui.html
 
 Alternatively, run `TestVehicleServiceApplication` from the IDE: it starts its own PostgreSQL container through Testcontainers, no `docker compose` needed.
 
+### Run the maintenance service
+
+```bash
+./mvnw -pl maintenance-service spring-boot:run -Dspring-boot.run.profiles=demo
+```
+
+It needs the vehicle service on port 8081 to create bookings. The `demo` profile loads about fourteen months of bookings and priced interventions for the demo fleet, plus upcoming bookings. Notifications go to port 8083; while the notification service is not running they are logged and dropped.
+
+Swagger UI: http://localhost:8082/swagger-ui.html
+
+> If your local database ran the demo data before 19 Oct 2026, recreate it with `docker compose down -v`: the vehicle demo migration changed so that its ids are stable.
+
 ## Vehicle service API
 
 | Method | Path | Description |
@@ -58,7 +70,29 @@ Alternatively, run `TestVehicleServiceApplication` from the IDE: it starts its o
 | `GET` | `/api/vehicles/inspections/expiring?days=30` | Vehicles with an overdue or upcoming inspection |
 | `GET` | `/api/vehicles/stats` | Fleet statistics by fuel type, age and brand |
 
-Errors use [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details: 400 for invalid input (with a per-field `errors` map), 404 for unknown resources, 409 for duplicates, 422 for broken business rules.
+## Maintenance service API
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` `POST` | `/api/bookings` | List (filters `vehicleId`, `status`) and book a workshop slot |
+| `GET` | `/api/bookings/{id}` | Booking detail |
+| `POST` | `/api/bookings/{id}/start` `/cancel` | Lifecycle: `BOOKED → IN_PROGRESS → COMPLETED`, cancellable until completed |
+| `POST` | `/api/bookings/{id}/complete` | Record the intervention, priced by plan (`STANDARD`, `WARRANTY`, `FLEET`) |
+| `GET` | `/api/interventions` | Interventions, filter by `vehicleId` for a vehicle's history |
+| `GET` | `/api/reports/brands/average-cost` | Average cost per brand (`HAVING`) |
+| `GET` | `/api/reports/brands/top-interventions` | Most expensive interventions per brand (`RANK() OVER`) |
+| `GET` | `/api/reports/monthly-spending?year=` | Spending per month with running total (CTE, `SUM() OVER`) |
+| `GET` | `/api/reports/workshop-load` | Booked hours per weekday |
+
+Highlights:
+
+- **Strategy pattern** for pricing: one `CostCalculationStrategy` per plan, chosen by `CostStrategyResolver`.
+- **OpenFeign** client to the vehicle service; a custom `ErrorDecoder` turns its 404 into a clean 404 here and any other failure, timeouts included, into 503.
+- **Vehicle snapshot**: each booking stores plate, brand and model, because the vehicle table lives in another database. Reports group by these columns.
+- **Double-booking protection**: the service checks first for a clear 409, and a PostgreSQL `EXCLUDE` constraint guarantees it under concurrent requests.
+- **Notifications** are forwarded after commit and asynchronously; a failure never breaks a booking.
+
+Errors use [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details: 400 for invalid input (with a per-field `errors` map), 404 for unknown resources, 409 for duplicates, 422 for broken business rules, and the maintenance service adds 503 when the vehicle service is unavailable.
 
 ## Build and test
 
