@@ -1,6 +1,14 @@
 spring:
   application:
     name: vehicle-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/vehicles_db
+    username: ${DB_USER:fleetcare}
+    password: ${DB_PASSWORD:fleetcare}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
 
 server:
   port: 8081
