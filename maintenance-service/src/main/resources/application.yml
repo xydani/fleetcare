@@ -27,6 +27,9 @@ management:
         include: health,info
 
 fleetcare:
+  pricing:
+    hourly-rate: 48.00
+    fleet-discount-percent: 15
   clients:
     vehicle-service-url: ${VEHICLE_SERVICE_URL:http://localhost:8081}
     notification-service-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
