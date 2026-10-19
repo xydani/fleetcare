@@ -3,6 +3,7 @@ package io.github.xydani.fleetcare.maintenance.intervention;
 import java.time.Clock;
 import java.time.LocalDateTime;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,15 +25,17 @@ public class InterventionService {
     private final BookingService bookingService;
     private final CostStrategyResolver costStrategyResolver;
     private final InterventionMapper interventionMapper;
+    private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
     public InterventionService(InterventionRepository interventionRepository, BookingService bookingService,
                                CostStrategyResolver costStrategyResolver, InterventionMapper interventionMapper,
-                               Clock clock) {
+                               ApplicationEventPublisher eventPublisher, Clock clock) {
         this.interventionRepository = interventionRepository;
         this.bookingService = bookingService;
         this.costStrategyResolver = costStrategyResolver;
         this.interventionMapper = interventionMapper;
+        this.eventPublisher = eventPublisher;
         this.clock = clock;
     }
 
@@ -50,6 +53,7 @@ public class InterventionService {
     /**
      * Completes an in-progress booking and records the intervention, priced by the strategy of the
      * requested plan. Fails with 422 if the booking is not in progress.
+     * Publishes an {@link InterventionCompletedEvent}.
      */
     @Transactional
     public InterventionResponse complete(Long bookingId, CompletionRequest request) {
@@ -60,6 +64,10 @@ public class InterventionService {
                 .calculate(request.partsCost(), request.labourHours());
         Intervention intervention = new Intervention(booking, request.description(), request.pricingPlan(),
                 request.labourHours(), cost, LocalDateTime.now(clock));
-        return interventionMapper.toResponse(interventionRepository.save(intervention));
+        intervention = interventionRepository.save(intervention);
+
+        eventPublisher.publishEvent(new InterventionCompletedEvent(intervention.getId(), booking.getId(),
+                booking.getVehicleId(), booking.getVehicle().plate(), cost.totalCost()));
+        return interventionMapper.toResponse(intervention);
     }
 }

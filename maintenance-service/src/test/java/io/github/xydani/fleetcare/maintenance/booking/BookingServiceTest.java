@@ -22,8 +22,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mapstruct.factory.Mappers;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import io.github.xydani.fleetcare.maintenance.booking.dto.BookingRequest;
@@ -47,13 +49,16 @@ class BookingServiceTest {
     @Mock
     private VehicleLookup vehicleLookup;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private BookingService bookingService;
 
     @BeforeEach
     void setUp() {
         var workshop = new WorkshopProperties(2, LocalTime.of(8, 0), LocalTime.of(18, 0));
         bookingService = new BookingService(bookingRepository, vehicleLookup, Mappers.getMapper(BookingMapper.class),
-                workshop, CLOCK);
+                workshop, eventPublisher, CLOCK);
     }
 
     @Test
@@ -69,6 +74,22 @@ class BookingServiceTest {
         assertThat(response.endsAt()).isEqualTo(NEXT_MONDAY_NINE.plusHours(2));
         assertThat(response.plate()).isEqualTo("FG482KL");
         assertThat(response.status()).isEqualTo(BookingStatus.BOOKED);
+    }
+
+    @Test
+    void shouldPublishBookingConfirmedEvent_whenBookingIsCreated() {
+        // given
+        givenVehicleExists();
+        when(bookingRepository.saveAndFlush(any(Booking.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        bookingService.create(request(NEXT_MONDAY_NINE, null));
+
+        // then
+        ArgumentCaptor<BookingConfirmedEvent> event = ArgumentCaptor.forClass(BookingConfirmedEvent.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertThat(event.getValue().plate()).isEqualTo("FG482KL");
+        assertThat(event.getValue().startsAt()).isEqualTo(NEXT_MONDAY_NINE);
     }
 
     @Test
@@ -145,6 +166,7 @@ class BookingServiceTest {
         // when / then
         assertThatThrownBy(() -> bookingService.create(request(NEXT_MONDAY_NINE, null)))
                 .isInstanceOf(ConflictException.class);
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
+import org.springframework.context.ApplicationEventPublisher;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.github.xydani.fleetcare.maintenance.booking.Booking;
@@ -46,6 +48,9 @@ class InterventionServiceTest {
     @Mock
     private BookingService bookingService;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private InterventionService interventionService;
 
     private final CompletionRequest request =
@@ -68,7 +73,7 @@ class InterventionServiceTest {
         };
         var resolver = new CostStrategyResolver(List.of(warranty, plan(PricingPlan.STANDARD), plan(PricingPlan.FLEET)));
         interventionService = new InterventionService(interventionRepository, bookingService, resolver,
-                Mappers.getMapper(InterventionMapper.class), CLOCK);
+                Mappers.getMapper(InterventionMapper.class), eventPublisher, CLOCK);
     }
 
     @Test
@@ -89,6 +94,7 @@ class InterventionServiceTest {
         assertThat(response.plate()).isEqualTo("FG482KL");
         assertThat(response.serviceType()).isEqualTo(ServiceType.BRAKES);
         assertThat(response.completedAt()).isEqualTo(LocalDateTime.of(2026, 10, 26, 11, 30));
+        verify(eventPublisher).publishEvent(any(InterventionCompletedEvent.class));
     }
 
     @Test
@@ -101,6 +107,7 @@ class InterventionServiceTest {
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("from BOOKED to COMPLETED");
         verify(interventionRepository, never()).save(any());
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test

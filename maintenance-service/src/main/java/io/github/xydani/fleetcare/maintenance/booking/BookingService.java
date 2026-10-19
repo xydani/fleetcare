@@ -5,6 +5,7 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,14 +27,17 @@ public class BookingService {
     private final VehicleLookup vehicleLookup;
     private final BookingMapper bookingMapper;
     private final WorkshopProperties workshop;
+    private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
     public BookingService(BookingRepository bookingRepository, VehicleLookup vehicleLookup,
-                          BookingMapper bookingMapper, WorkshopProperties workshop, Clock clock) {
+                          BookingMapper bookingMapper, WorkshopProperties workshop,
+                          ApplicationEventPublisher eventPublisher, Clock clock) {
         this.bookingRepository = bookingRepository;
         this.vehicleLookup = vehicleLookup;
         this.bookingMapper = bookingMapper;
         this.workshop = workshop;
+        this.eventPublisher = eventPublisher;
         this.clock = clock;
     }
 
@@ -49,6 +53,7 @@ public class BookingService {
     /**
      * Books a slot after checking, in order: opening hours (422), that the vehicle exists (404),
      * that it has no other booking at that time (409) and that a bay is free (409).
+     * Publishes a {@link BookingConfirmedEvent}.
      */
     @Transactional
     public BookingResponse create(BookingRequest request) {
@@ -70,11 +75,14 @@ public class BookingService {
         Booking booking = new Booking(request.vehicleId(), vehicle, request.serviceType(), startsAt, endsAt,
                 request.notes());
         try {
-            return bookingMapper.toResponse(bookingRepository.saveAndFlush(booking));
+            booking = bookingRepository.saveAndFlush(booking);
         } catch (DataIntegrityViolationException ex) {
             // a concurrent request booked the same vehicle after our check: the exclusion constraint caught it
             throw vehicleAlreadyBooked(request.vehicleId());
         }
+        eventPublisher.publishEvent(new BookingConfirmedEvent(booking.getId(), booking.getVehicleId(),
+                vehicle.plate(), booking.getServiceType(), booking.getStartsAt()));
+        return bookingMapper.toResponse(booking);
     }
 
     @Transactional
