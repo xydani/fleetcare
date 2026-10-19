@@ -12,6 +12,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 
 import io.github.xydani.fleetcare.vehicle.TestcontainersConfiguration;
 import io.github.xydani.fleetcare.vehicle.owner.Owner;
@@ -67,6 +68,26 @@ class VehicleRepositoryTest {
         // when / then
         assertThatThrownBy(() -> vehicleRepository.saveAndFlush(newVehicle("AB123CD")))
                 .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void shouldFilterByBrandIgnoringCaseAndFuelType_whenFiltersAreGiven() {
+        // given
+        vehicleRepository.save(newVehicle("AB123CD"));
+        vehicleRepository.save(new Vehicle("EF456GH", "Fiat", "Panda", 2020, FuelType.HYBRID,
+                LocalDate.of(2020, 1, 15), owner));
+        vehicleRepository.save(new Vehicle("LM789NP", "Toyota", "Yaris", 2021, FuelType.HYBRID,
+                LocalDate.of(2021, 3, 1), owner));
+
+        // when
+        var fiatHybrids = vehicleRepository.findAll(
+                VehicleSpecifications.withFilters("FIAT", FuelType.HYBRID, null), PageRequest.of(0, 10));
+        var allOfOwner = vehicleRepository.findAll(
+                VehicleSpecifications.withFilters(null, null, owner.getId()), PageRequest.of(0, 10));
+
+        // then
+        assertThat(fiatHybrids.getContent()).extracting(Vehicle::getPlate).containsExactly("EF456GH");
+        assertThat(allOfOwner.getTotalElements()).isEqualTo(3);
     }
 
     private Vehicle newVehicle(String plate) {
