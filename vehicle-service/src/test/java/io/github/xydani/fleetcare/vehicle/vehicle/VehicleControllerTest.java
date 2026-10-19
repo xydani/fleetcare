@@ -26,6 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import io.github.xydani.fleetcare.vehicle.common.web.PageResponse;
 import io.github.xydani.fleetcare.vehicle.vehicle.dto.OwnerSummary;
+import io.github.xydani.fleetcare.vehicle.vehicle.dto.VehicleDetailResponse;
 import io.github.xydani.fleetcare.vehicle.vehicle.dto.VehicleRequest;
 import io.github.xydani.fleetcare.vehicle.vehicle.dto.VehicleResponse;
 
@@ -37,6 +38,9 @@ class VehicleControllerTest {
 
     @MockitoBean
     private VehicleService vehicleService;
+
+    @MockitoBean
+    private VehicleDetailService vehicleDetailService;
 
     @Test
     void shouldReturnFilteredPage_whenListingVehicles() throws Exception {
@@ -77,8 +81,25 @@ class VehicleControllerTest {
     }
 
     @Test
+    void shouldReturnDetailWithInspectionStatus_whenVehicleExists() throws Exception {
+        when(vehicleDetailService.getDetail(1L)).thenReturn(VehicleDetailResponse.builder()
+                .id(1L)
+                .plate("FG482KL")
+                .owner(new OwnerSummary(2L, "Giulia Bianchi"))
+                .mileage(98_400, LocalDate.of(2026, 10, 1))
+                .nextInspection(LocalDate.of(2026, 11, 5), InspectionStatus.DUE_SOON)
+                .build());
+
+        mockMvc.perform(get("/api/vehicles/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentKm").value(98400))
+                .andExpect(jsonPath("$.inspectionStatus").value("DUE_SOON"))
+                .andExpect(jsonPath("$.nextInspectionDue").value("2026-11-05"));
+    }
+
+    @Test
     void shouldReturn404_whenVehicleDoesNotExist() throws Exception {
-        when(vehicleService.findById(42L)).thenThrow(new VehicleNotFoundException(42L));
+        when(vehicleDetailService.getDetail(42L)).thenThrow(new VehicleNotFoundException(42L));
 
         mockMvc.perform(get("/api/vehicles/42"))
                 .andExpect(status().isNotFound());

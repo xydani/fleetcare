@@ -9,6 +9,8 @@ public interface MileageReadingRepository extends JpaRepository<MileageReading, 
 
     boolean existsByVehicleIdAndReadingDate(Long vehicleId, LocalDate readingDate);
 
+    Optional<MileageReading> findFirstByVehicleIdOrderByReadingDateDesc(Long vehicleId);
+
     /** Latest reading strictly before the given date. */
     Optional<MileageReading> findFirstByVehicleIdAndReadingDateBeforeOrderByReadingDateDesc(
             Long vehicleId, LocalDate readingDate);

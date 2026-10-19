@@ -96,7 +96,7 @@ class VehicleServiceTest {
         when(vehicleRepository.findWithOwnerById(42L)).thenReturn(Optional.empty());
 
         // when / then
-        assertThatThrownBy(() -> vehicleService.findById(42L))
+        assertThatThrownBy(() -> vehicleService.getVehicle(42L))
                 .isInstanceOf(VehicleNotFoundException.class)
                 .hasMessage("Vehicle 42 not found");
     }

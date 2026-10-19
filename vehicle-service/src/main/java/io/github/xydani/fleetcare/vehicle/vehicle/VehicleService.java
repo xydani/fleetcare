@@ -31,10 +31,6 @@ public class VehicleService {
         return PageResponse.of(vehicleRepository.findAll(spec, pageable), vehicleMapper::toResponse);
     }
 
-    public VehicleResponse findById(Long id) {
-        return vehicleMapper.toResponse(getVehicle(id));
-    }
-
     @Transactional
     public VehicleResponse create(VehicleRequest request) {
         if (vehicleRepository.existsByPlate(request.plate())) {

@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.github.xydani.fleetcare.vehicle.common.web.PageResponse;
+import io.github.xydani.fleetcare.vehicle.vehicle.dto.VehicleDetailResponse;
 import io.github.xydani.fleetcare.vehicle.vehicle.dto.VehicleRequest;
 import io.github.xydani.fleetcare.vehicle.vehicle.dto.VehicleResponse;
 
@@ -27,9 +28,11 @@ import io.github.xydani.fleetcare.vehicle.vehicle.dto.VehicleResponse;
 public class VehicleController {
 
     private final VehicleService vehicleService;
+    private final VehicleDetailService vehicleDetailService;
 
-    public VehicleController(VehicleService vehicleService) {
+    public VehicleController(VehicleService vehicleService, VehicleDetailService vehicleDetailService) {
         this.vehicleService = vehicleService;
+        this.vehicleDetailService = vehicleDetailService;
     }
 
     @GetMapping
@@ -41,9 +44,12 @@ public class VehicleController {
         return vehicleService.findAll(brand, fuelType, ownerId, pageable);
     }
 
+    /**
+     * Vehicle with owner, current mileage and inspection status.
+     */
     @GetMapping("/{id}")
-    public VehicleResponse findById(@PathVariable Long id) {
-        return vehicleService.findById(id);
+    public VehicleDetailResponse findById(@PathVariable Long id) {
+        return vehicleDetailService.getDetail(id);
     }
 
     @PostMapping
