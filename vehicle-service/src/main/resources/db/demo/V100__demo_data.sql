@@ -16,8 +16,12 @@ INSERT INTO owner (first_name, last_name, email, phone) VALUES
     ('Valentina',  'De Luca',  'valentina.deluca@example.it', '+39 329 774 2290'),
     ('Logistica Nord', 'S.r.l.', 'flotta@logisticanord.example.it', '+39 02 4455 1200');
 
+-- The owner is looked up with a subquery, not a join: a join may reorder the rows, while a plain
+-- scan of VALUES keeps the listed order, so ids are stable (1 = FG482KL ... 30 = GP036XE).
+-- The maintenance service's demo data refers to vehicles by these ids.
 INSERT INTO vehicle (plate, brand, model, production_year, fuel_type, registration_date, owner_id)
-SELECT v.plate, v.brand, v.model, v.production_year, v.fuel_type, v.registration_date, o.id
+SELECT v.plate, v.brand, v.model, v.production_year, v.fuel_type, v.registration_date,
+       (SELECT o.id FROM owner o WHERE o.email = v.email)
 FROM (VALUES
     ('FG482KL', 'Fiat',       'Panda',       2017, 'PETROL',   DATE '2017-04-12', 'giulia.bianchi@example.it'),
     ('GA915TR', 'Toyota',     'Yaris',       2020, 'HYBRID',   DATE '2020-09-03', 'giulia.bianchi@example.it'),
@@ -49,8 +53,7 @@ FROM (VALUES
     ('GD567HK', 'Toyota',     'C-HR',        2021, 'HYBRID',   DATE '2021-02-26', 'chiara.greco@example.it'),
     ('FA921MR', 'Dacia',      'Duster',      2016, 'LPG',      DATE '2016-03-31', 'davide.bruno@example.it'),
     ('GP036XE', 'Kia',        'Niro',        2024, 'ELECTRIC', DATE '2024-07-10', 'elena.gallo@example.it')
-) AS v (plate, brand, model, production_year, fuel_type, registration_date, email)
-JOIN owner o ON o.email = v.email;
+) AS v (plate, brand, model, production_year, fuel_type, registration_date, email);
 
 -- One reading every quarter for the last two years (never before registration).
 -- Each vehicle drives a different yearly distance; the small per-reading jitter
