@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -15,9 +16,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import io.github.xydani.fleetcare.vehicle.common.error.ConflictException;
 import io.github.xydani.fleetcare.vehicle.owner.dto.OwnerRequest;
+import io.github.xydani.fleetcare.vehicle.owner.dto.OwnerResponse;
 import io.github.xydani.fleetcare.vehicle.vehicle.VehicleRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -89,6 +93,45 @@ class OwnerServiceTest {
         // then
         assertThat(owner.getLastName()).isEqualTo("Bianchi");
         assertThat(response.phone()).isEqualTo("+39 333 1042231");
+    }
+
+    @Test
+    void shouldThrowDuplicateEmail_whenUpdatingToAnotherOwnersEmail() {
+        // given
+        when(ownerRepository.findById(1L)).thenReturn(Optional.of(new Owner("A", "B", "a@b.it", null)));
+        when(ownerRepository.existsByEmailIgnoreCaseAndIdNot(request.email(), 1L)).thenReturn(true);
+
+        // when / then
+        assertThatThrownBy(() -> ownerService.update(1L, request)).isInstanceOf(DuplicateEmailException.class);
+    }
+
+    @Test
+    void shouldReturnPageOfOwners_whenListing() {
+        // given
+        var pageable = PageRequest.of(0, 20);
+        when(ownerRepository.findAll(pageable)).thenReturn(
+                new PageImpl<>(List.of(new Owner("Giulia", "Bianchi", "giulia@example.it", null)), pageable, 1));
+
+        // when
+        var page = ownerService.findAll(pageable);
+
+        // then
+        assertThat(page.totalElements()).isEqualTo(1);
+        assertThat(page.content()).extracting(OwnerResponse::lastName).containsExactly("Bianchi");
+    }
+
+    @Test
+    void shouldDeleteOwner_whenOwnerHasNoVehicles() {
+        // given
+        Owner owner = new Owner("A", "B", "a@b.it", null);
+        when(ownerRepository.findById(1L)).thenReturn(Optional.of(owner));
+        when(vehicleRepository.existsByOwnerId(1L)).thenReturn(false);
+
+        // when
+        ownerService.delete(1L);
+
+        // then
+        verify(ownerRepository).delete(owner);
     }
 
     @Test
