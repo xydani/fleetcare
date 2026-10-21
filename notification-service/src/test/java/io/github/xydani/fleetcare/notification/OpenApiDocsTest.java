@@ -23,6 +23,7 @@ class OpenApiDocsTest {
     void shouldPublishOpenApiDocument_withAllApiGroups() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.servers[0].url").value("/"))
                 .andExpect(jsonPath("$.info.title").value("FleetCare Notification Service"))
                 .andExpect(jsonPath("$.paths['/api/events']").exists())
                 .andExpect(jsonPath("$.paths['/api/events/stats']").exists())
