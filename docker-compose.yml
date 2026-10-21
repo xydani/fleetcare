@@ -18,7 +18,8 @@ services:
       retries: 10
 
   mongo:
-    image: mongo:8
+    # 8.0 (long-term support): 8.3 refuses to start on Linux kernel 6.19+ (SERVER-121912)
+    image: mongo:8.0
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-fleetcare}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-fleetcare}

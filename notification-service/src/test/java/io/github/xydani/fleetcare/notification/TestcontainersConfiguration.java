@@ -16,6 +16,6 @@ public class TestcontainersConfiguration {
     @Bean
     @ServiceConnection
     MongoDBContainer mongoContainer() {
-        return new MongoDBContainer(DockerImageName.parse("mongo:8"));
+        return new MongoDBContainer(DockerImageName.parse("mongo:8.0"));
     }
 }
