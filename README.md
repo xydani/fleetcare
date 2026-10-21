@@ -1,5 +1,11 @@
 # FleetCare
 
+[![CI](https://github.com/xydani/fleetcare/actions/workflows/ci.yml/badge.svg)](https://github.com/xydani/fleetcare/actions/workflows/ci.yml)
+![Coverage](https://img.shields.io/badge/coverage-lines%20%E2%89%A5%2085%25%20%C2%B7%20branches%20%E2%89%A5%2080%25-brightgreen)
+![Java](https://img.shields.io/badge/Java-21-orange)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6db33f)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 Spring Boot microservice backend for managing a vehicle fleet: vehicles, maintenance, workshop bookings and notifications. It is the backend my Android app MyCar Manager should have had.
 
 > 🚧 Work in progress.
@@ -36,7 +42,7 @@ Settings such as ports and the demo profile are in [`.env.example`](.env.example
 
 ### A quick tour
 
-In the Swagger UI, or with any HTTP client against `http://localhost:8080`:
+The same tour, ready to run request by request, is in [`http/fleetcare.http`](http/fleetcare.http) (VS Code REST Client). Or follow it in the Swagger UI, or with any HTTP client against `http://localhost:8080`:
 
 1. `GET /api/vehicles/1`: a demo vehicle with its current mileage and inspection status.
 2. `POST /api/bookings` with `{"vehicleId": 1, "serviceType": "BRAKES", "startsAt": "<a future weekday>T09:00:00"}`.
@@ -164,4 +170,6 @@ Errors use [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details: 4
 ./mvnw verify
 ```
 
-JaCoCo coverage reports are generated in `<module>/target/site/jacoco/index.html`.
+Runs every test (unit, web slice, Testcontainers with real PostgreSQL and MongoDB, WireMock for calls between services) and checks coverage: the build fails if a module drops below 85% of lines or 80% of branches. Docker must be running for the Testcontainers tests.
+
+The coverage of all modules together is in `coverage-report/target/site/jacoco-aggregate/index.html`. On GitHub, every CI run shows a coverage table in its summary and keeps the HTML report as an artifact.

@@ -1,0 +1,124 @@
+# FleetCare demo tour, all through the gateway.
+# Run the requests in order with the VS Code "REST Client" extension (humao.rest-client):
+# later requests reuse ids from earlier responses.
+# Start the system first: docker compose up --build --wait
+# The plate must be unique: change it to run the tour a second time on the same data.
+
+@gateway = http://localhost:8080
+@plate = GT518RX
+
+### 1. Register an owner
+# @name owner
+POST {{gateway}}/api/owners
+Content-Type: application/json
+
+{
+  "firstName": "Anna",
+  "lastName": "Verdi",
+  "email": "anna.verdi.{{$timestamp}}@example.it",
+  "phone": "+39 345 118 2290"
+}
+
+### 2. Register her car
+# @name vehicle
+POST {{gateway}}/api/vehicles
+Content-Type: application/json
+
+{
+  "plate": "{{plate}}",
+  "brand": "Fiat",
+  "model": "Tipo",
+  "productionYear": 2021,
+  "fuelType": "DIESEL",
+  "registrationDate": "2021-03-15",
+  "ownerId": {{owner.response.body.$.id}}
+}
+
+### 3. Record an odometer reading
+POST {{gateway}}/api/vehicles/{{vehicle.response.body.$.id}}/mileage
+Content-Type: application/json
+
+{
+  "readingDate": "2026-10-01",
+  "km": 61250
+}
+
+### 4. Vehicle detail: owner, current km and inspection status
+# Never inspected and registered over 4 years ago: the inspection is overdue.
+GET {{gateway}}/api/vehicles/{{vehicle.response.body.$.id}}
+
+### 5. Book a brake job (the maintenance service checks the vehicle through OpenFeign)
+# @name booking
+POST {{gateway}}/api/bookings
+Content-Type: application/json
+
+{
+  "vehicleId": {{vehicle.response.body.$.id}},
+  "serviceType": "BRAKES",
+  "startsAt": "2027-03-01T09:00:00"
+}
+
+### 6. Booking the same vehicle at an overlapping time: 409 Conflict
+POST {{gateway}}/api/bookings
+Content-Type: application/json
+
+{
+  "vehicleId": {{vehicle.response.body.$.id}},
+  "serviceType": "OIL_CHANGE",
+  "startsAt": "2027-03-01T10:00:00"
+}
+
+### 7. A Saturday: 422, the workshop is closed
+POST {{gateway}}/api/bookings
+Content-Type: application/json
+
+{
+  "vehicleId": {{vehicle.response.body.$.id}},
+  "serviceType": "OIL_CHANGE",
+  "startsAt": "2027-03-06T10:00:00"
+}
+
+### 8. Start the work
+POST {{gateway}}/api/bookings/{{booking.response.body.$.id}}/start
+
+### 9. Complete it: the FLEET pricing strategy applies a 15% discount
+POST {{gateway}}/api/bookings/{{booking.response.body.$.id}}/complete
+Content-Type: application/json
+
+{
+  "description": "Front brake pads and discs",
+  "partsCost": 180.00,
+  "labourHours": 2,
+  "pricingPlan": "FLEET"
+}
+
+### 10. The vehicle's maintenance history
+GET {{gateway}}/api/interventions?vehicleId={{vehicle.response.body.$.id}}
+
+### 11. Notifications: the booking and the completed work, sent asynchronously
+# @name notifications
+GET {{gateway}}/api/notifications?unread=true&vehicleId={{vehicle.response.body.$.id}}
+
+### 12. Mark the newest one as read
+PATCH {{gateway}}/api/notifications/{{notifications.response.body.$.content[0].id}}/read
+
+### 13. Run the daily inspection check now: the new car gets an "overdue" reminder
+POST {{gateway}}/api/reminders/inspections
+
+### 14. Running it again creates no duplicates
+POST {{gateway}}/api/reminders/inspections
+
+### 15. Reports (SQL window functions and a MongoDB aggregation pipeline)
+GET {{gateway}}/api/reports/brands/average-cost
+
+###
+GET {{gateway}}/api/reports/monthly-spending
+
+###
+GET {{gateway}}/api/vehicles/stats
+
+###
+GET {{gateway}}/api/vehicles/{{vehicle.response.body.$.id}}/mileage
+
+###
+GET {{gateway}}/api/events/stats?days=7

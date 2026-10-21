@@ -1,5 +1,7 @@
 package io.github.xydani.fleetcare.vehicle.owner;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +15,8 @@ import io.github.xydani.fleetcare.vehicle.vehicle.VehicleRepository;
 @Service
 @Transactional(readOnly = true)
 public class OwnerService {
+
+    private static final Logger log = LoggerFactory.getLogger(OwnerService.class);
 
     private final OwnerRepository ownerRepository;
     private final VehicleRepository vehicleRepository;
@@ -39,7 +43,9 @@ public class OwnerService {
             throw new DuplicateEmailException(request.email());
         }
         Owner owner = new Owner(request.firstName(), request.lastName(), request.email(), request.phone());
-        return ownerMapper.toResponse(ownerRepository.save(owner));
+        owner = ownerRepository.save(owner);
+        log.info("Owner {} registered", owner.getId());
+        return ownerMapper.toResponse(owner);
     }
 
     @Transactional
@@ -59,6 +65,7 @@ public class OwnerService {
             throw new ConflictException("Owner " + id + " still has registered vehicles");
         }
         ownerRepository.delete(owner);
+        log.info("Owner {} deleted", id);
     }
 
     Owner getOwner(Long id) {
