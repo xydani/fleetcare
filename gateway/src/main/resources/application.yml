@@ -1,6 +1,28 @@
 spring:
   application:
     name: gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 2000
+            response-timeout: 10s
+          # Static routes: three services do not need a service registry. In Docker Compose the
+          # URLs point at the container names, locally at localhost.
+          routes:
+            - id: vehicle-service
+              uri: ${VEHICLE_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/vehicles/**,/api/owners/**
+            - id: maintenance-service
+              uri: ${MAINTENANCE_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/bookings/**,/api/interventions/**,/api/reports/**
+            - id: notification-service
+              uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/notifications/**,/api/events/**,/api/reminders/**
 
 server:
   port: 8080
