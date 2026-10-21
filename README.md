@@ -55,8 +55,6 @@ Start only PostgreSQL (with `vehicles_db` and `maintenance_db`) and MongoDB, the
 docker compose up -d postgres mongo
 ```
 
-> If you used the project before 21 Oct 2026, run `docker compose down --volumes` once: the vehicle demo data changed, and MongoDB moved from 8 to 7.0, which cannot open data files written by 8.
-
 Default credentials are in [`.env.example`](.env.example); to change them, copy the file to `.env`.
 
 ### Run the vehicle service
