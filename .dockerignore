@@ -1,0 +1,10 @@
+# Only sources and the Maven wrapper go into the build context.
+**/target/
+.git/
+.github/
+.idea/
+.vscode/
+.claude/
+*.iml
+.env
+docker-compose.yml
