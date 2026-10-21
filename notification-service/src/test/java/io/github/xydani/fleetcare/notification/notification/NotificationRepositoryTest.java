@@ -66,7 +66,7 @@ class NotificationRepositoryTest {
         notificationRepository.save(notification(1L, "INSPECTION_DUE:1:2026-11-05"));
 
         // when / then
-        assertThat(notificationRepository.existsByDedupKey("INSPECTION_DUE:1:2026-11-05")).isTrue();
+        assertThat(notificationRepository.findByDedupKey("INSPECTION_DUE:1:2026-11-05")).isPresent();
         assertThatThrownBy(() -> notificationRepository.save(notification(1L, "INSPECTION_DUE:1:2026-11-05")))
                 .isInstanceOf(DuplicateKeyException.class);
     }
