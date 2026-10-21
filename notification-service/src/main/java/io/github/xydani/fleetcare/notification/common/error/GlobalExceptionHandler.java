@@ -36,6 +36,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problem(HttpStatus.UNPROCESSABLE_CONTENT, "Business rule violated", ex.getMessage());
     }
 
+    @ExceptionHandler(ServiceUnavailableException.class)
+    ProblemDetail handleServiceUnavailable(ServiceUnavailableException ex) {
+        logger.warn(ex.getMessage(), ex.getCause());
+        return problem(HttpStatus.SERVICE_UNAVAILABLE, "Dependency unavailable", ex.getMessage());
+    }
+
     /**
      * Adds an {@code errors} map (field name to message) to the default 400 response.
      */

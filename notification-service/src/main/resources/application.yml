@@ -26,5 +26,9 @@ management:
         include: health,info
 
 fleetcare:
+  reminders:
+    # every day at 07:00; "-" disables the job (the manual endpoint keeps working)
+    cron: ${REMINDERS_CRON:0 0 7 * * *}
+    days-ahead: 30
   clients:
     vehicle-service-url: ${VEHICLE_SERVICE_URL:http://localhost:8081}
