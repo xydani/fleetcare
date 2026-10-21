@@ -66,6 +66,19 @@ Every day at 07:00 it asks the vehicle service for overdue and upcoming inspecti
 
 Swagger UI: http://localhost:8083/swagger-ui.html
 
+### Run the gateway
+
+```bash
+./mvnw -pl gateway spring-boot:run
+```
+
+The single entry point on port 8080: every `/api/**` call goes through it to the right service.
+
+- **Swagger UI for the whole API**: http://localhost:8080/swagger-ui.html, with a drop-down to pick the service.
+- **Correlation id**: every response carries an `X-Correlation-Id` header (the client's own, if valid, or a new UUID), which is also sent to the service and written in the gateway's request log with status and duration.
+- **CORS** for browser front ends, configured once here (`CORS_ALLOWED_ORIGINS`).
+- Service URLs come from `VEHICLE_SERVICE_URL`, `MAINTENANCE_SERVICE_URL` and `NOTIFICATION_SERVICE_URL` (localhost by default). Routes are static: with three services a service registry such as Eureka would add moving parts without benefit.
+
 > If your local database ran the demo data before 19 Oct 2026, recreate it with `docker compose down -v`: the vehicle demo migration changed so that its ids are stable.
 
 ## Vehicle service API
