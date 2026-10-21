@@ -30,6 +30,29 @@ jobs:
       - name: Build and run tests
         run: ./mvnw -B -ntp verify
 
+      - name: Coverage summary
+        if: always()
+        run: |
+          csv=coverage-report/target/site/jacoco-aggregate/jacoco.csv
+          [ -f "$csv" ] || exit 0
+          {
+            echo "### Test coverage"
+            echo "| Module | Lines | Branches |"
+            echo "|---|---|---|"
+            awk -F, 'NR > 1 { m = $1; sub(/.*\//, "", m); lm[m] += $8; lc[m] += $9; bm[m] += $6; bc[m] += $7;
+                              tlm += $8; tlc += $9; tbm += $6; tbc += $7 }
+                     END { for (m in lm) printf "| %s | %.1f%% | %.1f%% |\n", m, 100*lc[m]/(lm[m]+lc[m]), 100*bc[m]/(bm[m]+bc[m]);
+                           printf "| **Total** | **%.1f%%** | **%.1f%%** |\n", 100*tlc/(tlm+tlc), 100*tbc/(tbm+tbc) }' "$csv"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: coverage-report
+          path: coverage-report/target/site/jacoco-aggregate/
+          if-no-files-found: ignore
+
   compose:
     name: Docker Compose smoke test
     runs-on: ubuntu-latest
