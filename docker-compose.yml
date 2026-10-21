@@ -18,7 +18,9 @@ services:
       retries: 10
 
   mongo:
-    image: mongo:8
+    # 7.0: MongoDB 8.x refuses to start on Linux kernels from 6.19 to 7.0.13 (SERVER-121912),
+    # which includes GitHub's CI runners. Tests use the same version.
+    image: mongo:7.0
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-fleetcare}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-fleetcare}

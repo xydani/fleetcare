@@ -55,6 +55,17 @@ It needs the vehicle service on port 8081 to create bookings. The `demo` profile
 
 Swagger UI: http://localhost:8082/swagger-ui.html
 
+### Run the notification service
+
+```bash
+docker compose up -d mongo
+./mvnw -pl notification-service spring-boot:run
+```
+
+Every day at 07:00 it asks the vehicle service for overdue and upcoming inspections and creates one reminder per vehicle and due date. Change the schedule with `REMINDERS_CRON` (`-` disables it), or run the check at once with `POST /api/reminders/inspections`.
+
+Swagger UI: http://localhost:8083/swagger-ui.html
+
 > If your local database ran the demo data before 19 Oct 2026, recreate it with `docker compose down -v`: the vehicle demo migration changed so that its ids are stable.
 
 ## Vehicle service API
@@ -91,6 +102,24 @@ Highlights:
 - **Vehicle snapshot**: each booking stores plate, brand and model, because the vehicle table lives in another database. Reports group by these columns.
 - **Double-booking protection**: the service checks first for a clear 409, and a PostgreSQL `EXCLUDE` constraint guarantees it under concurrent requests.
 - **Notifications** are forwarded after commit and asynchronously; a failure never breaks a booking.
+
+## Notification service API
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/events` | Report an event (`BOOKING_CONFIRMED`, `MAINTENANCE_COMPLETED`, `INSPECTION_DUE`); repeats are detected |
+| `GET` | `/api/events/stats?days=30` | Events per day and type (aggregation pipeline) |
+| `GET` | `/api/notifications` | Newest first, filters `unread=true` and `vehicleId` |
+| `GET` | `/api/notifications/unread-count` | Number of unread notifications |
+| `PATCH` | `/api/notifications/{id}/read` | Mark as read |
+| `POST` | `/api/reminders/inspections` | Run the daily inspection check now |
+
+Highlights:
+
+- **Factory pattern**: `NotificationFactory` turns an event type and its free-form payload into a notification, validating the fields each type needs (422 otherwise).
+- **MongoDB** fits here: payloads differ per event type and are written once. Events expire after 90 days through a **TTL index**.
+- **Idempotent events**: each notification has a deduplication key under a unique index, so retries and the daily job never create duplicates.
+- **Aggregation pipeline** (`$match`, `$project`, `$group`, `$sort`) for the statistics, grouped by local day.
 
 Errors use [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details: 400 for invalid input (with a per-field `errors` map), 404 for unknown resources, 409 for duplicates, 422 for broken business rules, and the maintenance service adds 503 when the vehicle service is unavailable.
 
