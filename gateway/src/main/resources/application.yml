@@ -8,6 +8,15 @@ spring:
           httpclient:
             connect-timeout: 2000
             response-timeout: 10s
+          # Browser front ends on other origins (comma-separated list); set CORS_ALLOWED_ORIGINS for others.
+          globalcors:
+            cors-configurations:
+              "[/api/**]":
+                allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+                allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+                allowed-headers: "*"
+                exposed-headers: X-Correlation-Id,Location
+                max-age: 3600
           # Static routes: three services do not need a service registry. In Docker Compose the
           # URLs point at the container names, locally at localhost.
           routes:
