@@ -34,6 +34,88 @@ services:
       timeout: 5s
       retries: 10
 
+  vehicle-service:
+    build:
+      context: .
+      args:
+        MODULE: vehicle-service
+    image: fleetcare/vehicle-service
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-demo}
+      DB_HOST: postgres
+      DB_USER: ${POSTGRES_USER:-fleetcare}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-fleetcare}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck: &service-health
+      test: ["CMD-SHELL", "wget -qO- http://localhost:$${SERVER_PORT:-8081}/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
+
+  maintenance-service:
+    build:
+      context: .
+      args:
+        MODULE: maintenance-service
+    image: fleetcare/maintenance-service
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-demo}
+      SERVER_PORT: 8082
+      DB_HOST: postgres
+      DB_USER: ${POSTGRES_USER:-fleetcare}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-fleetcare}
+      VEHICLE_SERVICE_URL: http://vehicle-service:8081
+      NOTIFICATION_SERVICE_URL: http://notification-service:8083
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck: *service-health
+
+  notification-service:
+    build:
+      context: .
+      args:
+        MODULE: notification-service
+    image: fleetcare/notification-service
+    environment:
+      SERVER_PORT: 8083
+      MONGO_HOST: mongo
+      MONGO_USER: ${MONGO_USER:-fleetcare}
+      MONGO_PASSWORD: ${MONGO_PASSWORD:-fleetcare}
+      VEHICLE_SERVICE_URL: http://vehicle-service:8081
+      REMINDERS_CRON: ${REMINDERS_CRON:-0 0 7 * * *}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck: *service-health
+
+  # The only service published on the host: everything else is reached through it.
+  gateway:
+    build:
+      context: .
+      args:
+        MODULE: gateway
+    image: fleetcare/gateway
+    environment:
+      SERVER_PORT: 8080
+      VEHICLE_SERVICE_URL: http://vehicle-service:8081
+      MAINTENANCE_SERVICE_URL: http://maintenance-service:8082
+      NOTIFICATION_SERVICE_URL: http://notification-service:8083
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      vehicle-service:
+        condition: service_healthy
+      maintenance-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    healthcheck: *service-health
+
 volumes:
   postgres-data:
   mongo-data:
