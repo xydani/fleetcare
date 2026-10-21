@@ -23,9 +23,40 @@ spring:
               uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
               predicates:
                 - Path=/api/notifications/**,/api/events/**,/api/reminders/**
+            # OpenAPI documents of the services, for the aggregated Swagger UI below.
+            # A prefix per service, not /v3/api-docs/{name}: that path belongs to the gateway's own springdoc.
+            - id: vehicle-service-docs
+              uri: ${VEHICLE_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/vehicle-service/v3/api-docs
+              filters:
+                - RewritePath=/vehicle-service/v3/api-docs, /v3/api-docs
+            - id: maintenance-service-docs
+              uri: ${MAINTENANCE_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/maintenance-service/v3/api-docs
+              filters:
+                - RewritePath=/maintenance-service/v3/api-docs, /v3/api-docs
+            - id: notification-service-docs
+              uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/notification-service/v3/api-docs
+              filters:
+                - RewritePath=/notification-service/v3/api-docs, /v3/api-docs
 
 server:
   port: 8080
+
+# One Swagger UI for the whole API, with a drop-down to pick the service.
+springdoc:
+  swagger-ui:
+    urls:
+      - name: vehicle-service
+        url: /vehicle-service/v3/api-docs
+      - name: maintenance-service
+        url: /maintenance-service/v3/api-docs
+      - name: notification-service
+        url: /notification-service/v3/api-docs
 
 management:
   endpoints:
