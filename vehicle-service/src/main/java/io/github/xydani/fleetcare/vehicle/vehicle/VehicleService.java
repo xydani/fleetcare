@@ -1,5 +1,7 @@
 package io.github.xydani.fleetcare.vehicle.vehicle;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +16,8 @@ import io.github.xydani.fleetcare.vehicle.vehicle.dto.VehicleResponse;
 @Service
 @Transactional(readOnly = true)
 public class VehicleService {
+
+    private static final Logger log = LoggerFactory.getLogger(VehicleService.class);
 
     private final VehicleRepository vehicleRepository;
     private final OwnerRepository ownerRepository;
@@ -41,7 +45,9 @@ public class VehicleService {
 
         Vehicle vehicle = new Vehicle(request.plate(), request.brand(), request.model(), request.productionYear(),
                 request.fuelType(), request.registrationDate(), owner);
-        return vehicleMapper.toResponse(vehicleRepository.save(vehicle));
+        vehicle = vehicleRepository.save(vehicle);
+        log.info("Vehicle {} registered for owner {}", vehicle.getId(), owner.getId());
+        return vehicleMapper.toResponse(vehicle);
     }
 
     @Transactional
@@ -63,6 +69,7 @@ public class VehicleService {
     @Transactional
     public void delete(Long id) {
         vehicleRepository.delete(getVehicle(id));
+        log.info("Vehicle {} deleted with its readings and inspections", id);
     }
 
     public Vehicle getVehicle(Long id) {

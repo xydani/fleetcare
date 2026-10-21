@@ -5,6 +5,8 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +24,8 @@ import io.github.xydani.fleetcare.maintenance.vehicle.VehicleSnapshot;
 @Service
 @Transactional(readOnly = true)
 public class BookingService {
+
+    private static final Logger log = LoggerFactory.getLogger(BookingService.class);
 
     private final BookingRepository bookingRepository;
     private final VehicleLookup vehicleLookup;
@@ -80,6 +84,8 @@ public class BookingService {
             // a concurrent request booked the same vehicle after our check: the exclusion constraint caught it
             throw vehicleAlreadyBooked(request.vehicleId());
         }
+        log.info("Booking {} created for vehicle {}: {} from {} to {}", booking.getId(), booking.getVehicleId(),
+                booking.getServiceType(), startsAt, endsAt);
         eventPublisher.publishEvent(new BookingConfirmedEvent(booking.getId(), booking.getVehicleId(),
                 vehicle.plate(), booking.getServiceType(), booking.getStartsAt()));
         return bookingMapper.toResponse(booking);
@@ -89,6 +95,7 @@ public class BookingService {
     public BookingResponse start(Long id) {
         Booking booking = getBooking(id);
         booking.start();
+        log.info("Booking {} started", id);
         return bookingMapper.toResponse(booking);
     }
 
@@ -96,6 +103,7 @@ public class BookingService {
     public BookingResponse cancel(Long id) {
         Booking booking = getBooking(id);
         booking.cancel();
+        log.info("Booking {} cancelled", id);
         return bookingMapper.toResponse(booking);
     }
 

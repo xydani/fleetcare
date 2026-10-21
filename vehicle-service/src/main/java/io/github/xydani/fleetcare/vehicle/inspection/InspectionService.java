@@ -4,6 +4,8 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,8 @@ import io.github.xydani.fleetcare.vehicle.vehicle.VehicleService;
 @Service
 @Transactional(readOnly = true)
 public class InspectionService {
+
+    private static final Logger log = LoggerFactory.getLogger(InspectionService.class);
 
     private final InspectionRepository inspectionRepository;
     private final InspectionDueQuery dueQuery;
@@ -53,7 +57,9 @@ public class InspectionService {
         LocalDate expiry = request.outcome().expiryFrom(request.inspectionDate());
         Inspection inspection = new Inspection(vehicle, request.inspectionDate(), expiry,
                 request.outcome(), request.notes());
-        return inspectionMapper.toResponse(inspectionRepository.save(inspection));
+        inspection = inspectionRepository.save(inspection);
+        log.info("Inspection recorded for vehicle {}: {}, valid until {}", vehicleId, request.outcome(), expiry);
+        return inspectionMapper.toResponse(inspection);
     }
 
     public List<InspectionDue> findDueWithin(int days) {

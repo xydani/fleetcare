@@ -3,6 +3,8 @@ package io.github.xydani.fleetcare.maintenance.intervention;
 import java.time.Clock;
 import java.time.LocalDateTime;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,8 @@ import io.github.xydani.fleetcare.maintenance.pricing.PricingPlan;
 @Service
 @Transactional(readOnly = true)
 public class InterventionService {
+
+    private static final Logger log = LoggerFactory.getLogger(InterventionService.class);
 
     private final InterventionRepository interventionRepository;
     private final BookingService bookingService;
@@ -65,6 +69,8 @@ public class InterventionService {
         Intervention intervention = new Intervention(booking, request.description(), request.pricingPlan(),
                 request.labourHours(), cost, LocalDateTime.now(clock));
         intervention = interventionRepository.save(intervention);
+        log.info("Booking {} completed: intervention {} priced {} at {}", bookingId, intervention.getId(),
+                request.pricingPlan(), cost.totalCost());
 
         eventPublisher.publishEvent(new InterventionCompletedEvent(intervention.getId(), booking.getId(),
                 booking.getVehicleId(), booking.getVehicle().plate(), cost.totalCost()));

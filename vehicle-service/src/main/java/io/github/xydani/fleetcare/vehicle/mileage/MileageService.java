@@ -2,6 +2,8 @@ package io.github.xydani.fleetcare.vehicle.mileage;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +18,8 @@ import io.github.xydani.fleetcare.vehicle.vehicle.VehicleService;
 @Service
 @Transactional(readOnly = true)
 public class MileageService {
+
+    private static final Logger log = LoggerFactory.getLogger(MileageService.class);
 
     private final MileageReadingRepository readingRepository;
     private final MileageHistoryQuery historyQuery;
@@ -65,6 +69,7 @@ public class MileageService {
 
         MileageReading saved = readingRepository.save(
                 new MileageReading(vehicle, request.readingDate(), request.km()));
+        log.info("Mileage reading of {} km recorded for vehicle {}", saved.getKm(), vehicleId);
         return new MileageReadingResponse(saved.getId(), vehicleId, saved.getReadingDate(), saved.getKm());
     }
 }
