@@ -6,36 +6,62 @@ Spring Boot microservice backend for managing a vehicle fleet: vehicles, mainten
 
 ## Architecture
 
-| Service | Port | Responsibility | Database |
+| Service | Port (local) | Responsibility | Database |
 |---|---|---|---|
 | `gateway` | 8080 | Single entry point (Spring Cloud Gateway) | – |
 | `vehicle-service` | 8081 | Vehicles, owners, mileage, inspections | PostgreSQL |
 | `maintenance-service` | 8082 | Interventions, bookings, cost reports | PostgreSQL |
 | `notification-service` | 8083 | Events and notifications (e.g. inspection due) | MongoDB |
 
+In Docker Compose only the gateway is published; the services talk to each other over the compose network.
+
 ## Stack
 
 Java 21 · Spring Boot · Spring Data JPA · Spring Data MongoDB · Spring Cloud Gateway · OpenFeign · Flyway · MapStruct · springdoc-openapi · JUnit 5 · Mockito · Testcontainers · Docker Compose
 
-## Requirements
+## Quick start
 
-- JDK 21 or newer (no Maven install needed: use the `./mvnw` wrapper)
-- Docker with Docker Compose
+All you need is Docker with Docker Compose:
+
+```bash
+docker compose up --build --wait
+```
+
+The first build takes a few minutes; then the whole system (two databases, three services, the gateway) is up with demo data. Everything is reached through the gateway on port 8080:
+
+- **Swagger UI**: http://localhost:8080/swagger-ui.html (pick the service in the drop-down at the top)
+- Stop with `docker compose down`; add `--volumes` to also delete the data.
+
+Settings such as ports and the demo profile are in [`.env.example`](.env.example); copy it to `.env` to change them.
+
+### A quick tour
+
+In the Swagger UI, or with any HTTP client against `http://localhost:8080`:
+
+1. `GET /api/vehicles/1`: a demo vehicle with its current mileage and inspection status.
+2. `POST /api/bookings` with `{"vehicleId": 1, "serviceType": "BRAKES", "startsAt": "<a future weekday>T09:00:00"}`.
+3. `POST /api/bookings/{id}/start`, then `POST /api/bookings/{id}/complete` with `{"description": "Brake pads", "partsCost": 120, "labourHours": 1.5, "pricingPlan": "FLEET"}`: the fleet plan applies a 15% discount.
+4. `GET /api/notifications?unread=true`: the booking and the completed work became notifications.
+5. `POST /api/reminders/inspections`: creates reminders for overdue and upcoming inspections; run it twice and the second time creates none.
+6. `GET /api/reports/monthly-spending` and `GET /api/vehicles/stats`: reports over the demo data.
 
 ## Local development
 
-Start PostgreSQL (with `vehicles_db` and `maintenance_db`) and MongoDB:
+Requirements: JDK 21 or newer (no Maven install needed: use the `./mvnw` wrapper) and Docker.
+
+Start only PostgreSQL (with `vehicles_db` and `maintenance_db`) and MongoDB, then run the services you work on from the IDE or with Maven:
 
 ```bash
-docker compose up -d
+docker compose up -d postgres mongo
 ```
+
+> If you used the project before 21 Oct 2026, run `docker compose down --volumes` once: the vehicle demo data changed, and MongoDB moved from 8 to 7.0, which cannot open data files written by 8.
 
 Default credentials are in [`.env.example`](.env.example); to change them, copy the file to `.env`.
 
 ### Run the vehicle service
 
 ```bash
-docker compose up -d postgres
 ./mvnw -pl vehicle-service spring-boot:run -Dspring-boot.run.profiles=demo
 ```
 
@@ -58,7 +84,6 @@ Swagger UI: http://localhost:8082/swagger-ui.html
 ### Run the notification service
 
 ```bash
-docker compose up -d mongo
 ./mvnw -pl notification-service spring-boot:run
 ```
 
@@ -79,7 +104,6 @@ The single entry point on port 8080: every `/api/**` call goes through it to the
 - **CORS** for browser front ends, configured once here (`CORS_ALLOWED_ORIGINS`).
 - Service URLs come from `VEHICLE_SERVICE_URL`, `MAINTENANCE_SERVICE_URL` and `NOTIFICATION_SERVICE_URL` (localhost by default). Routes are static: with three services a service registry such as Eureka would add moving parts without benefit.
 
-> If your local database ran the demo data before 19 Oct 2026, recreate it with `docker compose down -v`: the vehicle demo migration changed so that its ids are stable.
 
 ## Vehicle service API
 
