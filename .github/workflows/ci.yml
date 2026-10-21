@@ -29,13 +29,11 @@ jobs:
 
       - name: Debug mongo
         run: |
-          docker run -d --name mdb mongo:8.0 --replSet docker-rs
-          sleep 5; docker ps -a --format '{{.Image}} {{.Status}}'
-          docker exec mdb mongosh --quiet --eval 'printjson(rs.initiate())' || true
-          sleep 8; docker ps -a --format '{{.Image}} {{.Status}}'
+          docker run -d --name mdb -p 27017 mongo:8.0
+          sleep 6; docker ps -a --format '{{.Image}} {{.Status}}'
           docker inspect mdb --format 'exit={{.State.ExitCode}} oom={{.State.OOMKilled}}'
-          docker logs mdb 2>&1 | grep -E '"s":"(F|E)"' | tail -10
-          docker logs mdb 2>&1 | tail -5
+          docker logs mdb 2>&1 | grep -E '"s":"(F|E|W)"' | cut -c1-400 | tail -10
+          docker logs mdb 2>&1 | tail -3 | cut -c1-400
           exit 1
 
       - name: Build and run tests
