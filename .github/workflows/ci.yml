@@ -29,3 +29,29 @@ jobs:
 
       - name: Build and run tests
         run: ./mvnw -B -ntp verify
+
+  compose:
+    name: Docker Compose smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Start the whole system
+        run: docker compose up --build --detach --wait --wait-timeout 300
+
+      - name: Call each service through the gateway
+        run: |
+          curl -fsS http://localhost:8080/api/vehicles/1
+          curl -fsS "http://localhost:8080/api/reports/brands/average-cost?minInterventions=1"
+          curl -fsS http://localhost:8080/api/notifications/unread-count
+          curl -fsS -o /dev/null http://localhost:8080/swagger-ui/index.html
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs --tail 100
+
+      - name: Stop
+        if: always()
+        run: docker compose down --volumes
