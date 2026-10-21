@@ -42,7 +42,7 @@ Settings such as ports and the demo profile are in [`.env.example`](.env.example
 
 ### A quick tour
 
-In the Swagger UI, or with any HTTP client against `http://localhost:8080`:
+The same tour, ready to run request by request, is in [`http/fleetcare.http`](http/fleetcare.http) (VS Code REST Client). Or follow it in the Swagger UI, or with any HTTP client against `http://localhost:8080`:
 
 1. `GET /api/vehicles/1`: a demo vehicle with its current mileage and inspection status.
 2. `POST /api/bookings` with `{"vehicleId": 1, "serviceType": "BRAKES", "startsAt": "<a future weekday>T09:00:00"}`.
