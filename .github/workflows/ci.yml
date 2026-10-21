@@ -29,12 +29,10 @@ jobs:
 
       - name: Debug mongo
         run: |
-          uname -a; nproc; free -m; docker version --format '{{.Server.Version}}'
-          grep -o -m1 -w avx2 /proc/cpuinfo || echo "no avx2"
-          docker run -d --name m8 mongo:8 --replSet docker-rs
-          sleep 8; docker ps -a; docker inspect m8 --format '{{.State.ExitCode}} {{.State.OOMKilled}} {{.State.Error}}'
-          docker logs m8 2>&1 | tail -40
-          docker run -d --name m7 mongo:7 --replSet docker-rs; sleep 8; docker ps -a --filter name=m7
+          uname -r
+          for t in 8.0 8.2 7.0; do docker run -d --name m$t mongo:$t --replSet docker-rs >/dev/null 2>&1; done
+          sleep 10; docker ps -a --format '{{.Image}} {{.Status}}'
+          for t in 8.0 8.2; do docker exec m$t mongod --version | head -1; done
           exit 1
 
       - name: Build and run tests
