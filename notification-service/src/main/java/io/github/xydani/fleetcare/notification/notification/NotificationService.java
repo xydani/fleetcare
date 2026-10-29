@@ -26,17 +26,7 @@ public class NotificationService {
      * @param unread    when true, only notifications not read yet
      */
     public PageResponse<NotificationResponse> findAll(Long vehicleId, boolean unread, Pageable pageable) {
-        Page<Notification> page;
-        if (vehicleId != null) {
-            page = unread
-                    ? notificationRepository.findByVehicleIdAndReadFalse(vehicleId, pageable)
-                    : notificationRepository.findByVehicleId(vehicleId, pageable);
-        } else {
-            page = unread
-                    ? notificationRepository.findByReadFalse(pageable)
-                    : notificationRepository.findAll(pageable);
-        }
-        return PageResponse.of(page, NotificationResponse::from);
+        return PageResponse.of(findPage(vehicleId, unread, pageable), NotificationResponse::from);
     }
 
     public long countUnread() {
@@ -48,5 +38,18 @@ public class NotificationService {
                 .orElseThrow(() -> new NotificationNotFoundException(id));
         notification.markRead(Instant.now(clock));
         return NotificationResponse.from(notificationRepository.save(notification));
+    }
+
+    private Page<Notification> findPage(Long vehicleId, boolean unread, Pageable pageable) {
+        if (vehicleId != null && unread) {
+            return notificationRepository.findByVehicleIdAndReadFalse(vehicleId, pageable);
+        }
+        if (vehicleId != null) {
+            return notificationRepository.findByVehicleId(vehicleId, pageable);
+        }
+        if (unread) {
+            return notificationRepository.findByReadFalse(pageable);
+        }
+        return notificationRepository.findAll(pageable);
     }
 }
