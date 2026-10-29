@@ -5,8 +5,9 @@ FROM eclipse-temurin:21-jdk-alpine AS build
 ARG MODULE
 WORKDIR /workspace
 COPY . .
-# The cache mount keeps downloaded dependencies between builds of all four services.
-RUN --mount=type=cache,target=/root/.m2 \
+# The cache mount keeps downloaded dependencies between builds of all four services;
+# sharing=locked stops parallel builds from reading a half-written Maven install.
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
     ./mvnw -B -q -ntp -pl "${MODULE}" -am package -DskipTests \
  && cp "${MODULE}"/target/"${MODULE}"-*.jar application.jar \
  && java -Djarmode=tools -jar application.jar extract --layers --destination extracted
