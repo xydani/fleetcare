@@ -21,8 +21,8 @@ public record CostBreakdown(
     public static CostBreakdown of(BigDecimal partsCost, BigDecimal labourCost, BigDecimal discount) {
         BigDecimal parts = money(partsCost);
         BigDecimal labour = money(labourCost);
-        BigDecimal off = money(discount);
-        return new CostBreakdown(parts, labour, off, parts.add(labour).subtract(off));
+        BigDecimal discountAmount = money(discount);
+        return new CostBreakdown(parts, labour, discountAmount, parts.add(labour).subtract(discountAmount));
     }
 
     static BigDecimal money(BigDecimal amount) {

@@ -17,6 +17,9 @@ import io.github.xydani.fleetcare.maintenance.report.dto.WeekdayLoad;
 @Transactional(readOnly = true)
 public class ReportService {
 
+    /** Default period of the workshop load report, today included. */
+    private static final int DEFAULT_LOAD_DAYS = 90;
+
     private final ReportQuery reportQuery;
     private final Clock clock;
 
@@ -45,7 +48,7 @@ public class ReportService {
      */
     public List<WeekdayLoad> workshopLoad(LocalDate from, LocalDate to) {
         LocalDate end = to != null ? to : LocalDate.now(clock);
-        LocalDate start = from != null ? from : end.minusDays(89);
+        LocalDate start = from != null ? from : end.minusDays(DEFAULT_LOAD_DAYS - 1);
         if (start.isAfter(end)) {
             throw new BusinessRuleException("'from' must not be after 'to'");
         }

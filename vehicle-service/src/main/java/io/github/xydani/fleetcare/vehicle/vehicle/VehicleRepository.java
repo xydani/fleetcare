@@ -21,8 +21,6 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long>, JpaSpec
     @EntityGraph(attributePaths = "owner")
     Optional<Vehicle> findWithOwnerById(Long id);
 
-    Optional<Vehicle> findByPlate(String plate);
-
     boolean existsByPlate(String plate);
 
     boolean existsByPlateAndIdNot(String plate, Long id);

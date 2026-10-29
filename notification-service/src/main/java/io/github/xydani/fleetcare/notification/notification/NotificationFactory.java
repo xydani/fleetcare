@@ -51,11 +51,16 @@ public class NotificationFactory {
         LocalDate dueDate = p.date("dueDate");
         boolean overdue = p.flag("overdue");
 
-        String title = overdue ? "Inspection overdue" : "Inspection due soon";
-        String message = overdue
-                ? "The inspection of %s expired on %s. The vehicle must not be driven until it passes a new one."
-                        .formatted(vehicle, DATE.format(dueDate))
-                : "The inspection of %s is due by %s.".formatted(vehicle, DATE.format(dueDate));
+        String title;
+        String message;
+        if (overdue) {
+            title = "Inspection overdue";
+            message = "The inspection of %s expired on %s. The vehicle must not be driven until it passes a new one."
+                    .formatted(vehicle, DATE.format(dueDate));
+        } else {
+            title = "Inspection due soon";
+            message = "The inspection of %s is due by %s.".formatted(vehicle, DATE.format(dueDate));
+        }
         // one reminder per vehicle and due date, however often the scheduler runs
         return notification(EventType.INSPECTION_DUE, vehicleId, p.text("plate"), p.optionalText("ownerEmail"),
                 title, message, "INSPECTION_DUE:" + vehicleId + ":" + dueDate);
@@ -92,7 +97,7 @@ public class NotificationFactory {
     private record Payload(EventType type, Map<String, Object> values) {
 
         Object required(String field) {
-            Object value = values == null ? null : values.get(field);
+            Object value = valueOf(field);
             if (value == null || value.toString().isBlank()) {
                 throw new InvalidEventException("%s event needs '%s' in its payload".formatted(type, field));
             }
@@ -104,8 +109,13 @@ public class NotificationFactory {
         }
 
         String optionalText(String field) {
-            Object value = values == null ? null : values.get(field);
+            Object value = valueOf(field);
             return value == null ? null : value.toString();
+        }
+
+        /* The whole payload may be missing from the request, not just one field. */
+        private Object valueOf(String field) {
+            return values == null ? null : values.get(field);
         }
 
         long number(String field) {

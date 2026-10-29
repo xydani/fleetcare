@@ -2,6 +2,7 @@ package io.github.xydani.fleetcare.notification.event;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,10 +44,10 @@ public class EventService {
         EventLog event = eventLogRepository.save(
                 new EventLog(request.type(), request.source(), request.payload(), Instant.now(clock)));
 
-        String existing = existingNotificationId(notification.getDedupKey());
-        if (existing != null) {
-            log.debug("{} event from {} already notified as {}", request.type(), request.source(), existing);
-            return new EventResponse(event.getId(), existing, true);
+        Optional<String> existing = findNotificationId(notification.getDedupKey());
+        if (existing.isPresent()) {
+            log.debug("{} event from {} already notified as {}", request.type(), request.source(), existing.get());
+            return new EventResponse(event.getId(), existing.get(), true);
         }
         try {
             String created = notificationRepository.save(notification).getId();
@@ -55,11 +56,11 @@ public class EventService {
             return new EventResponse(event.getId(), created, false);
         } catch (DuplicateKeyException ex) {
             // a concurrent event created it between the check and the insert: the unique index caught it
-            return new EventResponse(event.getId(), existingNotificationId(notification.getDedupKey()), true);
+            return new EventResponse(event.getId(), findNotificationId(notification.getDedupKey()).orElse(null), true);
         }
     }
 
-    private String existingNotificationId(String dedupKey) {
-        return notificationRepository.findByDedupKey(dedupKey).map(Notification::getId).orElse(null);
+    private Optional<String> findNotificationId(String dedupKey) {
+        return notificationRepository.findByDedupKey(dedupKey).map(Notification::getId);
     }
 }

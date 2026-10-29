@@ -16,8 +16,7 @@ class VehicleClientErrorDecoder implements ErrorDecoder {
         if (response.status() == 404) {
             return new VehicleNotFoundException(vehicleIdOf(response));
         }
-        return new ServiceUnavailableException(
-                "Vehicle service answered with HTTP " + response.status(), null);
+        return new ServiceUnavailableException("Vehicle service answered with HTTP " + response.status());
     }
 
     /* The id is the last segment of the requested URL, e.g. /api/vehicles/42. */

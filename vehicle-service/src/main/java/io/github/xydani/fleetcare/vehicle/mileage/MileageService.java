@@ -52,24 +52,30 @@ public class MileageService {
             throw new ConflictException("A reading for " + request.readingDate() + " already exists");
         }
 
-        readingRepository
-                .findFirstByVehicleIdAndReadingDateBeforeOrderByReadingDateDesc(vehicleId, request.readingDate())
-                .filter(previous -> request.km() < previous.getKm())
-                .ifPresent(previous -> {
-                    throw new BusinessRuleException("Mileage cannot decrease: " + previous.getKm()
-                            + " km were recorded on " + previous.getReadingDate());
-                });
-        readingRepository
-                .findFirstByVehicleIdAndReadingDateAfterOrderByReadingDateAsc(vehicleId, request.readingDate())
-                .filter(next -> request.km() > next.getKm())
-                .ifPresent(next -> {
-                    throw new BusinessRuleException("Mileage cannot exceed the later reading of " + next.getKm()
-                            + " km on " + next.getReadingDate());
-                });
+        checkKmBetweenNeighbouringReadings(vehicleId, request);
 
         MileageReading saved = readingRepository.save(
                 new MileageReading(vehicle, request.readingDate(), request.km()));
         log.info("Mileage reading of {} km recorded for vehicle {}", saved.getKm(), vehicleId);
         return new MileageReadingResponse(saved.getId(), vehicleId, saved.getReadingDate(), saved.getKm());
+    }
+
+    /* The new value must not be lower than the reading before it or higher than the reading after it. */
+    private void checkKmBetweenNeighbouringReadings(Long vehicleId, MileageReadingRequest request) {
+        MileageReading previous = readingRepository
+                .findFirstByVehicleIdAndReadingDateBeforeOrderByReadingDateDesc(vehicleId, request.readingDate())
+                .orElse(null);
+        if (previous != null && request.km() < previous.getKm()) {
+            throw new BusinessRuleException("Mileage cannot decrease: " + previous.getKm()
+                    + " km were recorded on " + previous.getReadingDate());
+        }
+
+        MileageReading next = readingRepository
+                .findFirstByVehicleIdAndReadingDateAfterOrderByReadingDateAsc(vehicleId, request.readingDate())
+                .orElse(null);
+        if (next != null && request.km() > next.getKm()) {
+            throw new BusinessRuleException("Mileage cannot exceed the later reading of " + next.getKm()
+                    + " km on " + next.getReadingDate());
+        }
     }
 }

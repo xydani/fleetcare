@@ -37,12 +37,12 @@ class VehicleRepositoryTest {
     }
 
     @Test
-    void shouldFindVehicleByPlate_whenVehicleExists() {
+    void shouldLoadVehicleWithOwner_whenVehicleExists() {
         // given
-        vehicleRepository.save(newVehicle("AB123CD"));
+        Vehicle saved = vehicleRepository.save(newVehicle("AB123CD"));
 
         // when
-        var found = vehicleRepository.findByPlate("AB123CD");
+        var found = vehicleRepository.findWithOwnerById(saved.getId());
 
         // then
         assertThat(found).isPresent();

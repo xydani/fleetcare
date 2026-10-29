@@ -118,16 +118,20 @@ public class BookingService {
     }
 
     private void checkWithinOpeningHours(LocalDateTime startsAt, LocalDateTime endsAt) {
-        if (!startsAt.isAfter(LocalDateTime.now(clock))) {
+        boolean startsInTheFuture = startsAt.isAfter(LocalDateTime.now(clock));
+        if (!startsInTheFuture) {
             throw new BusinessRuleException("A booking must start in the future");
         }
+
         DayOfWeek day = startsAt.getDayOfWeek();
         if (day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY) {
             throw new BusinessRuleException("The workshop is closed at weekends");
         }
-        if (startsAt.toLocalTime().isBefore(workshop.opensAt())
-                || !endsAt.toLocalDate().equals(startsAt.toLocalDate())
-                || endsAt.toLocalTime().isAfter(workshop.closesAt())) {
+
+        boolean startsBeforeOpening = startsAt.toLocalTime().isBefore(workshop.opensAt());
+        boolean endsAnotherDay = !endsAt.toLocalDate().equals(startsAt.toLocalDate());
+        boolean endsAfterClosing = endsAt.toLocalTime().isAfter(workshop.closesAt());
+        if (startsBeforeOpening || endsAnotherDay || endsAfterClosing) {
             throw new BusinessRuleException("A booking must fit within opening hours, %s-%s"
                     .formatted(workshop.opensAt(), workshop.closesAt()));
         }

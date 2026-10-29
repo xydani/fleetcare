@@ -13,22 +13,23 @@ import org.springframework.stereotype.Component;
 @Component
 public class CostStrategyResolver {
 
-    private final Map<PricingPlan, CostCalculationStrategy> strategies = new EnumMap<>(PricingPlan.class);
+    private final Map<PricingPlan, CostCalculationStrategy> strategiesByPlan = new EnumMap<>(PricingPlan.class);
 
     public CostStrategyResolver(List<CostCalculationStrategy> strategies) {
         for (CostCalculationStrategy strategy : strategies) {
-            if (this.strategies.putIfAbsent(strategy.plan(), strategy) != null) {
+            if (strategiesByPlan.containsKey(strategy.plan())) {
                 throw new IllegalStateException("More than one cost strategy for plan " + strategy.plan());
             }
+            strategiesByPlan.put(strategy.plan(), strategy);
         }
         for (PricingPlan plan : PricingPlan.values()) {
-            if (!this.strategies.containsKey(plan)) {
+            if (!strategiesByPlan.containsKey(plan)) {
                 throw new IllegalStateException("No cost strategy for plan " + plan);
             }
         }
     }
 
     public CostCalculationStrategy resolve(PricingPlan plan) {
-        return strategies.get(plan);
+        return strategiesByPlan.get(plan);
     }
 }
