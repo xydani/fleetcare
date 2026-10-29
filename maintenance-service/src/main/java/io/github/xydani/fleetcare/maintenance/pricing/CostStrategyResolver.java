@@ -17,9 +17,10 @@ public class CostStrategyResolver {
 
     public CostStrategyResolver(List<CostCalculationStrategy> strategies) {
         for (CostCalculationStrategy strategy : strategies) {
-            if (strategiesByPlan.putIfAbsent(strategy.plan(), strategy) != null) {
+            if (strategiesByPlan.containsKey(strategy.plan())) {
                 throw new IllegalStateException("More than one cost strategy for plan " + strategy.plan());
             }
+            strategiesByPlan.put(strategy.plan(), strategy);
         }
         for (PricingPlan plan : PricingPlan.values()) {
             if (!strategiesByPlan.containsKey(plan)) {
