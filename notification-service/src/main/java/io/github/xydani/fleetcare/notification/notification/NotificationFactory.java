@@ -97,7 +97,7 @@ public class NotificationFactory {
     private record Payload(EventType type, Map<String, Object> values) {
 
         Object required(String field) {
-            Object value = values == null ? null : values.get(field);
+            Object value = valueOf(field);
             if (value == null || value.toString().isBlank()) {
                 throw new InvalidEventException("%s event needs '%s' in its payload".formatted(type, field));
             }
@@ -109,8 +109,13 @@ public class NotificationFactory {
         }
 
         String optionalText(String field) {
-            Object value = values == null ? null : values.get(field);
+            Object value = valueOf(field);
             return value == null ? null : value.toString();
+        }
+
+        /* The whole payload may be missing from the request, not just one field. */
+        private Object valueOf(String field) {
+            return values == null ? null : values.get(field);
         }
 
         long number(String field) {
