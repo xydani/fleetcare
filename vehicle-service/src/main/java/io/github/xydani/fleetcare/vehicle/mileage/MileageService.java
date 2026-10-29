@@ -52,20 +52,21 @@ public class MileageService {
             throw new ConflictException("A reading for " + request.readingDate() + " already exists");
         }
 
-        readingRepository
+        MileageReading previous = readingRepository
                 .findFirstByVehicleIdAndReadingDateBeforeOrderByReadingDateDesc(vehicleId, request.readingDate())
-                .filter(previous -> request.km() < previous.getKm())
-                .ifPresent(previous -> {
-                    throw new BusinessRuleException("Mileage cannot decrease: " + previous.getKm()
-                            + " km were recorded on " + previous.getReadingDate());
-                });
-        readingRepository
+                .orElse(null);
+        if (previous != null && request.km() < previous.getKm()) {
+            throw new BusinessRuleException("Mileage cannot decrease: " + previous.getKm()
+                    + " km were recorded on " + previous.getReadingDate());
+        }
+
+        MileageReading next = readingRepository
                 .findFirstByVehicleIdAndReadingDateAfterOrderByReadingDateAsc(vehicleId, request.readingDate())
-                .filter(next -> request.km() > next.getKm())
-                .ifPresent(next -> {
-                    throw new BusinessRuleException("Mileage cannot exceed the later reading of " + next.getKm()
-                            + " km on " + next.getReadingDate());
-                });
+                .orElse(null);
+        if (next != null && request.km() > next.getKm()) {
+            throw new BusinessRuleException("Mileage cannot exceed the later reading of " + next.getKm()
+                    + " km on " + next.getReadingDate());
+        }
 
         MileageReading saved = readingRepository.save(
                 new MileageReading(vehicle, request.readingDate(), request.km()));
