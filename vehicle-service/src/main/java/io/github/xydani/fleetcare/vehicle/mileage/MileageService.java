@@ -52,6 +52,16 @@ public class MileageService {
             throw new ConflictException("A reading for " + request.readingDate() + " already exists");
         }
 
+        checkKmBetweenNeighbouringReadings(vehicleId, request);
+
+        MileageReading saved = readingRepository.save(
+                new MileageReading(vehicle, request.readingDate(), request.km()));
+        log.info("Mileage reading of {} km recorded for vehicle {}", saved.getKm(), vehicleId);
+        return new MileageReadingResponse(saved.getId(), vehicleId, saved.getReadingDate(), saved.getKm());
+    }
+
+    /* The new value must not be lower than the reading before it or higher than the reading after it. */
+    private void checkKmBetweenNeighbouringReadings(Long vehicleId, MileageReadingRequest request) {
         MileageReading previous = readingRepository
                 .findFirstByVehicleIdAndReadingDateBeforeOrderByReadingDateDesc(vehicleId, request.readingDate())
                 .orElse(null);
@@ -67,10 +77,5 @@ public class MileageService {
             throw new BusinessRuleException("Mileage cannot exceed the later reading of " + next.getKm()
                     + " km on " + next.getReadingDate());
         }
-
-        MileageReading saved = readingRepository.save(
-                new MileageReading(vehicle, request.readingDate(), request.km()));
-        log.info("Mileage reading of {} km recorded for vehicle {}", saved.getKm(), vehicleId);
-        return new MileageReadingResponse(saved.getId(), vehicleId, saved.getReadingDate(), saved.getKm());
     }
 }
