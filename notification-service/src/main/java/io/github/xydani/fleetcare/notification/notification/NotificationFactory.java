@@ -51,11 +51,16 @@ public class NotificationFactory {
         LocalDate dueDate = p.date("dueDate");
         boolean overdue = p.flag("overdue");
 
-        String title = overdue ? "Inspection overdue" : "Inspection due soon";
-        String message = overdue
-                ? "The inspection of %s expired on %s. The vehicle must not be driven until it passes a new one."
-                        .formatted(vehicle, DATE.format(dueDate))
-                : "The inspection of %s is due by %s.".formatted(vehicle, DATE.format(dueDate));
+        String title;
+        String message;
+        if (overdue) {
+            title = "Inspection overdue";
+            message = "The inspection of %s expired on %s. The vehicle must not be driven until it passes a new one."
+                    .formatted(vehicle, DATE.format(dueDate));
+        } else {
+            title = "Inspection due soon";
+            message = "The inspection of %s is due by %s.".formatted(vehicle, DATE.format(dueDate));
+        }
         // one reminder per vehicle and due date, however often the scheduler runs
         return notification(EventType.INSPECTION_DUE, vehicleId, p.text("plate"), p.optionalText("ownerEmail"),
                 title, message, "INSPECTION_DUE:" + vehicleId + ":" + dueDate);
