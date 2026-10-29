@@ -14,9 +14,9 @@ public enum InspectionStatus {
         if (dueDate.isBefore(today)) {
             return OVERDUE;
         }
-        if (!dueDate.isAfter(today.plusDays(DUE_SOON_DAYS))) {
-            return DUE_SOON;
+        if (dueDate.isAfter(today.plusDays(DUE_SOON_DAYS))) {
+            return VALID;
         }
-        return VALID;
+        return DUE_SOON;
     }
 }
